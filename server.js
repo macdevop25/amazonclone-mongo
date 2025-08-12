@@ -271,34 +271,60 @@ app.put("/api/user/update-email", async (req, res) => {
 
 
 // ==========================
-// Update Password Route
-// ==========================
+// // Update Password Route
+// // ==========================
+// app.put("/api/user/update-password", async (req, res) => {
+//     const { id, oldPassword, newPassword } = req.body;
+
+//     if (!id || !oldPassword || !newPassword)
+//         return res.status(400).json({ message: "All fields are required." });
+
+//     try {
+//         const result = await db.query("SELECT * FROM users WHERE id = $1", [id]);
+//         if (result.rows.length === 0)
+//             return res.status(404).json({ message: "User not found." });
+
+//         const user = result.rows[0];
+//         const isMatch = await bcrypt.compare(oldPassword, user.password);
+//         if (!isMatch)
+//             return res.status(401).json({ message: "Old password is incorrect." });
+
+//         const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+//         await db.query("UPDATE users SET password = $1 WHERE id = $2", [hashedNewPassword, id]);
+
+//         res.json({ message: "Password updated successfully." });
+//     } catch (err) {
+//         console.error("Update password error:", err);
+//         res.status(500).json({ message: "Failed to update password." });
+//     }
+// });
 app.put("/api/user/update-password", async (req, res) => {
-    const { id, oldPassword, newPassword } = req.body;
+  const { id, oldPassword, newPassword } = req.body;
 
-    if (!id || !oldPassword || !newPassword)
-        return res.status(400).json({ message: "All fields are required." });
+  if (!id || !oldPassword || !newPassword) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
 
-    try {
-        const result = await db.query("SELECT * FROM users WHERE id = $1", [id]);
-        if (result.rows.length === 0)
-            return res.status(404).json({ message: "User not found." });
-
-        const user = result.rows[0];
-        const isMatch = await bcrypt.compare(oldPassword, user.password);
-        if (!isMatch)
-            return res.status(401).json({ message: "Old password is incorrect." });
-
-        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-        await db.query("UPDATE users SET password = $1 WHERE id = $2", [hashedNewPassword, id]);
-
-        res.json({ message: "Password updated successfully." });
-    } catch (err) {
-        console.error("Update password error:", err);
-        res.status(500).json({ message: "Failed to update password." });
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
     }
-});
 
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Old password is incorrect." });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.json({ message: "Password updated successfully." });
+  } catch (err) {
+    console.error("Update password error:", err);
+    res.status(500).json({ message: "Failed to update password." });
+  }
+});
 // ==========================
 // Contact Form Route
 // ==========================
