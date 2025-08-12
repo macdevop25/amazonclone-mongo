@@ -28,7 +28,7 @@ app.use(express.json({ limit: "5mb" })); // ⬅ Important for base64 image size
 // --- Middleware Configuration ---
 
 app.use(cors({
-  origin: 'https://amazon-mongo.netlify.app', // frontend origin
+  origin: 'https://amazonclone-mongo.onrender.com', // frontend origin
   credentials: true
 }));
 // Parse incoming request bodies in JSON format
