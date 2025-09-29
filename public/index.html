@@ -116,13 +116,24 @@
         </div>
     </nav>
 
-    <!-- Search Bar -->
-    <div class="container my-3 position-relative" style="max-width: 600px; margin:auto;">
-        <input type="text" id="searchBox" class="form-control rounded" placeholder="Search products..."
-            autocomplete="off" />
-        <ul id="suggestionList" class="list-group position-absolute top-100 start-0 rounded"></ul>
-    </div>
+   <div class="container my-3" style="max-width: 800px; margin:auto;">
+  <div class="d-flex align-items-center">
+    <!-- Category Select -->
+    <select id="categorySelect" class="form-select me-2" style="max-width: 180px;">
+      <option value="">All Categories</option>
+      <option value="Electronics">Electronics</option>
+      <option value="Accessories">Accessories</option>
+      <option value="Gaming">Gaming</option>
+      <option value="Storage">Storage</option>
+    </select>
 
+    <!-- Search Box -->
+    <div class="flex-grow-1 position-relative">
+      <input type="text" id="searchBox" class="form-control rounded" placeholder="Search products..." autocomplete="off" />
+      <ul id="suggestionList" class="list-group position-absolute top-100 start-0 rounded"></ul>
+    </div>
+  </div>
+</div>
     <!-- Main Content -->
     <div class="container my-4">
         <h1 class="mb-4 text-center">Featured Products</h1>
@@ -235,6 +246,19 @@
                 loadingMessageEl.style.display = 'none';
             }
         }
+        // Category filter
+const categorySelect = document.getElementById("categorySelect");
+
+categorySelect.addEventListener("change", () => {
+    const selectedCategory = categorySelect.value;
+    if (selectedCategory === "") {
+        renderProducts(products); // Show all
+    } else {
+        const filtered = products.filter(p => p.category === selectedCategory);
+        renderProducts(filtered);
+    }
+});
+
 
         // --- Render Products to the Grid ---
         function renderProducts(productsToRender) {
@@ -471,19 +495,6 @@ ${currentUser.role === 'admin' ? '<li class="nav-item"><a class="nav-link" href=
             const cartCountEl = document.getElementById("cart-count");
             if (cartCountEl) cartCountEl.textContent = cartLength;
         }
-
-
-        // Mode toggle function (consistent with other pages)
-        // let classes = ["bg-white", "bg-dark"];
-        // let textColors = ["text-dark", "text-dark", "text-dark", "text-white"];
-        // let current = 0;
-        // function mode() {
-        //     const body = document.body;
-        //     body.classList.remove(...classes, "text-white", "text-dark");
-        //     current = (current + 1) % classes.length;
-        //     body.classList.add(classes[current], textColors[current]);
-        //     body.style.backgroundImage = "none";
-        // }
 
         // Search box autocomplete
         searchBox.addEventListener("input", () => {

@@ -5,116 +5,78 @@ https://images.surferseo.art/72e25adf-6e8f-4788-b287-8c589668ef96.jpeg
 https://images.surferseo.art/37216291-8bac-4f7c-a7b8-d0c74cad8bdd.webp
 
 
-addproduct.html:
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Add Product (Admin)</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light text-dark">
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const productTableBody = document.getElementById('productTableBody');
+            const loadingSpinner = document.getElementById('loading');
 
-  <div class="container mt-5">
-    <h2 class="mb-4">Add New Product</h2>
+            const fetchProducts = async () => {
+                loadingSpinner.style.display = 'block';
+                productTableBody.innerHTML = '';
+                try {
+                    const res = await fetch('/api/admin/products');
+                    const data = await res.json();
 
-    <form id="productForm" class="border p-4 rounded bg-white shadow-sm">
-      <div class="mb-3">
-        <label class="form-label">Title</label>
-        <input type="text" name="title" class="form-control" required>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Image URL</label>
-        <input type="text" name="image" class="form-control">
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Description</label>
-        <textarea name="description" class="form-control" rows="3"></textarea>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Price</label>
-        <input type="number" name="price" class="form-control" required>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Category</label>
-        <input type="text" name="category" class="form-control">
-      </div>
-      <button type="submit" class="btn btn-primary">Add Product</button>
-    </form>
-  </div>
+                    if (res.ok) {
+                        if (data.products.length > 0) {
+                            data.products.forEach(product => {
+                                const row = `
+                                <tr>
+  <td><img src="${product.image.startsWith('uploads') ? '/' + product.image : product.image}" alt="${product.title}" class="product-image rounded"></td>
+  <td>${product.title}</td>
+  <td>₹${product.price.toFixed(2)}</td>
+  <td>${product.category || 'N/A'}</td>
+  <td>
+    <button class="btn btn-sm btn-warning edit-btn" data-id="${product._id}">Edit</button>
+    <button class="btn btn-sm btn-danger delete-btn" data-id="${product._id}">Delete</button>
+  </td>
+</tr>
+     `;
+     
+                                productTableBody.insertAdjacentHTML('beforeend', row);
+                            });
+                        } else {
+                            productTableBody.innerHTML = '<tr><td colspan="5" class="text-center">No products found.</td></tr>';
+                        }
+                    } else {
+                        console.error('Failed to fetch products:', data.message);
+                        productTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Error: ${data.message}</td></tr>`;
+                    }
+                } catch (err) {
+                    console.error('Fetch error:', err);
+                    productTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Failed to connect to the server.</td></tr>';
+                } finally {
+                    loadingSpinner.style.display = 'none';
+                }
+            };
 
-  <!-- ✅ Toast Container -->
-  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
-    <div id="liveToast" class="toast text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-      <div class="d-flex">
-        <div class="toast-body" id="toastMsg">Success</div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-      </div>
-    </div>
-  </div>
+            fetchProducts();
 
-  <!-- ✅ Bootstrap Bundle (includes Toast JS) -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+            // Add event listener for delete buttons
+            productTableBody.addEventListener('click', async (e) => {
+                const button = e.target;
+                const productId = button.dataset.id;
 
-  <script>
-    const currentUser = JSON.parse(localStorage.getItem("currentUser")) || null;
-
-    // Redirect if not admin
-    if (!currentUser || currentUser.role !== "admin") {
-      alert("Access denied: Admins only");
-      window.location.href = "index.html";
-    }
-
-    const toastMsg = document.getElementById('toastMsg');
-    const toastEl = document.getElementById('liveToast');
-    const toast = new bootstrap.Toast(toastEl);
-
-    document.getElementById('productForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const form = e.target;
-
-      const data = {
-        title: form.title.value,
-        image: form.image.value,
-        description: form.description.value,
-        price: form.price.value,
-        category: form.category.value,
-        role: currentUser.role
-      };
-
-      try {
-        const res = await fetch('/api/admin/add-product', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+                if (button.classList.contains('delete-btn')) {
+                    if (confirm('Are you sure you want to delete this product?')) {
+                        try {
+                            const res = await fetch(`/api/admin/delete-product/${productId}`, {
+                                method: 'DELETE'
+                            });
+                            const result = await res.json();
+                            if (res.ok) {
+                                alert(result.message);
+                                fetchProducts(); // Reload products after deletion
+                            } else {
+                                alert(result.message || 'Failed to delete product.');
+                            }
+                        } catch (err) {
+                            console.error('Delete error:', err);
+                            alert('An error occurred while trying to delete the product.');
+                        }
+                    }
+                }
+            });
         });
-
-        const result = await res.json();
-
-        if (res.ok) {
-          form.reset();
-          toastMsg.textContent = "✅ Product added successfully!";
-          toastEl.classList.remove('bg-danger');
-          toastEl.classList.add('bg-success');
-          toast.show();
-
-          // Navigate after delay
-          setTimeout(() => {
-            window.location.href = "index.html";
-          }, 2000);
-        } else {
-          toastMsg.textContent = result.message || "Failed to add product.";
-          toastEl.classList.remove('bg-success');
-          toastEl.classList.add('bg-danger');
-          toast.show();
-        }
-      } catch (err) {
-        toastMsg.textContent = "Error adding product.";
-        toastEl.classList.remove('bg-success');
-        toastEl.classList.add('bg-danger');
-        toast.show();
-      }
-    });
-  </script>
-</body>
-</html>
+        
+    </script>
